@@ -1,6 +1,6 @@
 package com.jsl26tp.jsl26tp.config;
 
-import com.jsl26tp.jsl26tp.service.CustomUserDetailsService;
+import com.jsl26tp.jsl26tp.auth.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

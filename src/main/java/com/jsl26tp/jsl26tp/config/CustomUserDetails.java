@@ -1,6 +1,6 @@
 package com.jsl26tp.jsl26tp.config;
 
-import com.jsl26tp.jsl26tp.domain.User;
+import com.jsl26tp.jsl26tp.auth.domain.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
