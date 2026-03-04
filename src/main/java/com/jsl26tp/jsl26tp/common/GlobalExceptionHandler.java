@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
-@RestControllerAdvice(basePackages = "com.jsl26tp.jsl26tp.controller")
+@RestControllerAdvice(basePackages = "com.jsl26tp.jsl26tp")
 public class GlobalExceptionHandler {
 
     // 우리가 직접 던진 비즈니스 예외
