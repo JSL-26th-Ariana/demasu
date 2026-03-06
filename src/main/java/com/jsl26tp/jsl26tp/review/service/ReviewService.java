@@ -50,7 +50,6 @@ public class ReviewService {
                 }
             }
         }
-
     }
 
     /*
@@ -80,6 +79,49 @@ public class ReviewService {
 
         }catch(IOException e) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+    }
+
+    /*
+     * 리뷰 상세 조회
+     */
+
+    public Review getReviewDetail(Long id) {
+        // 리뷰 정보 + 작성자 닉네임 가져오기
+        Review review = reviewMapper.findById(id);
+
+        // 예외 처리: 만약 해당 리뷰가 존재하지 않거나 삭제된 상태라면
+        if (review == null || "HIDDEN".equals(review.getStatus())) {
+            throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND); //
+        }
+
+        // 해당 리뷰 이미지 리스트 가져와서 객체에 담기
+        List<ReviewImage> images = reviewImageMapper.findByReviewId(id);
+        review.setImages(images);
+
+        return review;
+    }
+
+    /*
+     * 리뷰 수정
+     */
+
+    public void updateReview(Review review, List<MultipartFile> files) {
+        // 본문 수정
+        reviewMapper.updateReview(review);
+
+        // 새로운 이미지 파일이 넘어 온 경우
+        if (files != null && !files.isEmpty() && !files.get(0).isEmpty()) {
+
+            // 기존 이미지 정보 삭제
+            reviewImageMapper.deleteByReviewId(review.getId());
+
+            // 새로운 이미지 업데이트
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    saveFileToReview(review, file);
+                }
+            }
         }
     }
 
