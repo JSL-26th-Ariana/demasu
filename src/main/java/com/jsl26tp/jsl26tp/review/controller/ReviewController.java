@@ -16,6 +16,10 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
+    /*
+     * 리뷰 작성
+     * http://localhost:8090/api/reviews/write
+     */
     @PostMapping("/write")
     public ApiResponse<String> writeReview(
             @ModelAttribute Review review,
@@ -26,6 +30,10 @@ public class ReviewController {
         return ApiResponse.ok("OK");
     }
 
+    /*
+     * 리뷰 상세 조회
+     * http://localhost:8090/api/reviews/{id}
+     */
     @GetMapping("/{id}")
     public ApiResponse<Review> getReviewDetail(@PathVariable("id") Long id) {
 
@@ -33,6 +41,20 @@ public class ReviewController {
         Review review = reviewService.getReviewDetail(id);
 
         return ApiResponse.ok(review);
+    }
+
+    /*
+     * 리뷰 수정
+     * http://localhost:8090/api/reviews/update
+     */
+    @PostMapping("/update")
+    public ApiResponse<String> updateReview(
+            @ModelAttribute Review review,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+
+        reviewService.updateReview(review, files);
+
+        return ApiResponse.ok("OK");
     }
 
 }
