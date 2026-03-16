@@ -1,5 +1,6 @@
 package com.jsl26tp.jsl26tp.config;
 
+import com.jsl26tp.jsl26tp.auth.service.CustomOAuth2UserService;
 import com.jsl26tp.jsl26tp.auth.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,9 +15,12 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
-    SecurityConfig(CustomUserDetailsService customUserDetailsService) {
+    SecurityConfig(CustomUserDetailsService customUserDetailsService,
+                   CustomOAuth2UserService customOAuth2UserService) {
         this.customUserDetailsService = customUserDetailsService;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
 
     // 비밀번호 암호화 (BCrypt: 단방향 해시, 복호화 불가)
@@ -39,8 +43,14 @@ public class SecurityConfig {
                     "/login",               // 로그인
                     "/register",            // 회원가입
                     "/api/toilets/**",      // 화장실 조회 API (비회원도 위치 조회 가능)
+                    "/review/api/toilet/*/avg",  // 리뷰 평균 점수 (비회원도 조회 가능)
+                    "/review/api/toilet/*/cnt",  // 리뷰 개수 (비회원도 조회 가능)
+                    "/review/api/toilet/*",      // 화장실별 리뷰 목록 (비회원도 조회 가능)
                     "/api/check-*",         // 중복 체크 API (회원가입 시 사용)
                     "/api/line/webhook",    // LINE 챗봇 Webhook
+                    "/error",               // 에러 페이지 (리다이렉트 루프 방지)
+                    "/oauth2/**",           // Google OAuth2 인증
+                    "/login/oauth2/**",     // OAuth2 콜백
                     "/css/**",
                     "/js/**",
                     "/images/**",
@@ -49,7 +59,7 @@ public class SecurityConfig {
 
                 // 관리자 전용 페이지
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // 나머지는 로그인 필요 (리뷰, 신고, 문의 등)
                 .anyRequest().authenticated()
             )
@@ -65,10 +75,20 @@ public class SecurityConfig {
                 .permitAll()
             )
 
+            // Google OAuth2 로그인 설정
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true)
+                .failureUrl("/login?error=true")
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+            )
+
             // 로그아웃 설정
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessUrl("/login?logout=true") // 로그아웃 후 ?logout=true 파라미터와 함께 로그인 페이지로 이동 (header.js에서 자동 모달 오픈 방지용)
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()

@@ -7,6 +7,11 @@ import com.jsl26tp.jsl26tp.auth.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -14,6 +19,9 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${file.path.profile}")
+    private String profileUploadPath;
 
     // 회원가입
     public void register(User user) {
@@ -79,21 +87,60 @@ public class UserService {
     public User findByUsername(String username) {
         User user = userMapper.findByUsername(username);
         if (user == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND); // 누나 규칙 준수!
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         return user;
     }
 
     // 회원 정보 수정
     public void updateUser(User user) {
+        // 본인 제외 닉네임 중복 체크
+        User nicknameCheck = userMapper.findByNickname(user.getNickname());
+        if (nicknameCheck != null && !nicknameCheck.getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+        // 본인 제외 이메일 중복 체크
+        User emailCheck = userMapper.findByEmail(user.getEmail());
+        if (emailCheck != null && !emailCheck.getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
         userMapper.updateUser(user);
     }
 
     // 비밀번호 변경
-    public void updatePassword(Long id, String newPassword) {
+    public void updatePassword(Long id, String currentPassword, String newPassword) {
+        // 현재 비밀번호 검증
+        User user = userMapper.findById(id);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
+        }
         if (newPassword.length() < 8) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
         userMapper.updatePassword(id, passwordEncoder.encode(newPassword));
+    }
+
+    // 프로필 이미지 저장
+    public String saveProfileImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) return null;
+
+        // 저장 디렉토리 없으면 생성
+        File dir = new File(profileUploadPath);
+        if (!dir.exists()) dir.mkdirs();
+
+        // UUID로 파일명 중복 방지
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        File dest = new File(profileUploadPath + fileName);
+
+        try {
+            file.transferTo(dest);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+
+        return "/profile/" + fileName; // DB에 저장할 경로
     }
 }
