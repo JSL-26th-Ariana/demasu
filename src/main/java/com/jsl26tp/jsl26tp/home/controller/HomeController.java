@@ -17,4 +17,17 @@ public class HomeController {
         model.addAttribute("naverMapsClientId", naverMapsClientId);
         return "index";
     }
+
+    // 프라이버시 정책 페이지
+    @GetMapping("/privacy")
+    public String privacy() {
+        return "privacy";
+    }
+
+    // 이용약관 페이지
+    @GetMapping("/terms")
+    public String terms() {
+        return "terms";
+    }
+
 }

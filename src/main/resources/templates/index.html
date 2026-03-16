@@ -1,174 +1,274 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>トイレマップ - 韓国のトイレを探す</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>トイレマップ - デマス</title>
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/index.css?v=5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* zoom: 0.9 보정 - 화면 꽉 채우기 */
+        body { height: calc(100vh / 0.9) !important; overflow: hidden !important; }
+        .main-container { height: calc(100vh / 0.9 - 66px) !important; }
+
+        /* 지도 페이지 전용 - 구글맵스타일 오버레이 푸터 */
+        .site-footer .footer-content { display: none !important; }
+        .site-footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 50 !important;
+            background: rgba(245,245,245,0.88) !important;
+            backdrop-filter: blur(4px) !important;
+            border: none !important;
+            border-top: 1px solid rgba(0,0,0,0.06) !important;
+            padding: 0 !important;
+        }
+        /* index 전용 푸터: 왼쪽 copyright, 오른쪽 링크 */
+        .site-footer .footer-bottom {
+            max-width: 100% !important;
+            border-top: none !important;
+            padding: 4px 20px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            font-size: 11px !important;
+            color: #666 !important;
+        }
+        .site-footer .footer-bottom::before { display: none !important; }
+        .site-footer .footer-bottom-links {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        .site-footer .footer-bottom-links a {
+            font-size: 11px !important;
+            color: #666 !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+        }
+        .site-footer .footer-bottom-links a:hover { color: #00C896 !important; }
+        .site-footer .footer-bottom-links .footer-divider { color: #bbb !important; font-size: 10px !important; }
+    </style>
 </head>
-<body>
+<body style="zoom: 0.9;">
+<!-- Header + Toast (共通フラグメント) -->
+<div th:replace="~{fragments/header :: headerAndToast}"></div>
 
-<!-- ========== 전체 컨테이너 ========== -->
-<div class="app-container">
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="nearby-section">
+            <h2 class="nearby-title">近くのトイレ</h2>
+            <p class="nearby-subtitle">現在地から近い順に表示</p>
+        </div>
 
-    <!-- ========== 지도 영역 (전체 화면) ========== -->
-    <div class="map-area" id="mapArea">
-
-        <!-- 지도 -->
-        <div id="map" class="map-container"></div>
-
-        <!-- 상단 오버레이: 헤더 + 검색바 + 필터 -->
-        <div class="map-overlay-top">
-
-            <!-- 헤더: 로고 + 로그인 -->
-            <div class="top-header">
-                <div class="logo">
-                    <i class="fas fa-restroom"></i>
-                    <span>トイレマップ</span>
-                </div>
-                <div class="header-actions">
-                    <!-- 비로그인 시 -->
-                    <div sec:authorize="!isAuthenticated()">
-                        <button class="btn-login" onclick="openLoginModal()">
-                            <i class="fas fa-sign-in-alt"></i> ログイン
-                        </button>
-                    </div>
-                    <!-- 로그인 시 -->
-                    <div sec:authorize="isAuthenticated()" class="user-info">
-                        <img th:src="${#authentication.principal.iconUrl}" alt="icon" class="user-icon">
-                        <span sec:authentication="principal.nickname" class="user-nickname"></span>
-                        <button class="btn-icon" onclick="toggleUserMenu()">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="user-menu" id="userMenu">
-                            <a href="/mypage"><i class="fas fa-user"></i> マイページ</a>
-                            <a href="/inquiry"><i class="fas fa-envelope"></i> お問い合わせ</a>
-                            <form th:action="@{/logout}" method="post">
-                                <button type="submit"><i class="fas fa-sign-out-alt"></i> ログアウト</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 검색바 -->
-            <div class="search-box">
+        <!-- Search Box in Sidebar -->
+        <div class="sidebar-search">
+            <div class="sidebar-search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="地域、建物名で検索">
+                <input type="text" id="searchInput" placeholder="地域や建物名で検索">
             </div>
-
-            <!-- 필터 태그 -->
-            <div class="filter-tags">
+            <div class="sidebar-filters">
                 <button class="filter-tag active" data-filter="all">すべて</button>
                 <button class="filter-tag" data-filter="is24hours">24時間</button>
                 <button class="filter-tag" data-filter="isWheelchair">車椅子対応</button>
                 <button class="filter-tag" data-filter="hasDiaper">おむつ交換台</button>
-                <button class="filter-tag" data-filter="hasPaper">清潔な所</button>
+                <button class="filter-tag" data-filter="hasPaper">清潔</button>
             </div>
         </div>
 
-        <!-- 우측 컨트롤: 줌 + 현재위치 -->
+        <!-- Toilet List (Dynamic) -->
+        <div class="toilet-list" id="toiletList">
+            <div class="toilet-list-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>読み込み中...</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Map Area -->
+    <main class="map-area">
+        <div id="map" class="map-container"></div>
+
+        <!-- Right controls -->
         <div class="map-controls-right">
-            <button class="btn-my-location" onclick="moveToMyLocation()">
+            <button class="btn-my-location" onclick="moveToMyLocation()" title="現在地に移動">
                 <i class="fas fa-crosshairs"></i>
             </button>
         </div>
 
-        <!-- 가장 가까운 화장실 버튼 -->
+        <!-- Nearest toilet button -->
         <div class="nearest-btn-wrap">
             <button class="btn-nearest" onclick="findNearest()">
                 <i class="fas fa-location-arrow"></i> 最も近いトイレ
             </button>
         </div>
-
-    </div>
-
-    <!-- ========== 바텀시트 ========== -->
-    <div class="bottom-sheet" id="bottomSheet">
-        <div class="sheet-handle" id="sheetHandle">
-            <div class="handle-bar"></div>
-        </div>
-        <div class="toilet-list" id="toiletList">
-            <div class="toilet-list-empty">
-                <i class="fas fa-search"></i>
-                <p>周辺のトイレを検索中...</p>
-            </div>
-        </div>
-    </div>
-
+    </main>
 </div>
 
-<!-- ========== 로그인 모달 ========== -->
-<div class="modal-overlay" id="loginModal" onclick="closeLoginModal(event)">
-    <div class="login-modal" onclick="event.stopPropagation()">
-        <button class="modal-close" onclick="closeLoginModal()">
-            <i class="fas fa-times"></i>
-        </button>
-        <div class="modal-logo">
-            <i class="fas fa-restroom"></i>
-            <h2>トイレマップ</h2>
-            <p>韓国のトイレを簡単に見つけよう</p>
-        </div>
-        <form th:action="@{/login}" method="post" class="login-form">
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" name="username" placeholder="ユーザーID" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" name="password" placeholder="パスワード" required>
-            </div>
-            <div class="error-message" id="loginErrorMsg"
-                 th:if="${loginError}" style="display:block;">
-                <i class="fas fa-exclamation-circle"></i>
-                IDまたはパスワードが正しくありません。
-            </div>
-            <button type="submit" class="btn-submit">ログイン</button>
-        </form>
-        <div class="divider"><span>または</span></div>
-        <button class="btn-google" onclick="googleLogin()">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-                <path fill="#34A853" d="M9.003 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z"/>
-                <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
-                <path fill="#EA4335" d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.002 0 5.48 0 2.438 2.017.956 4.958L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z"/>
+<!-- Footer -->
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<!-- Image Lightbox -->
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">
+        <i class="fas fa-times"></i>
+    </button>
+    <img class="lightbox-image" id="lightboxImage" src="" alt="Review image">
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="login-modal-overlay" style="display: none;">
+    <div class="login-modal-content">
+        <button class="close-btn" onclick="closeLoginModal()">×</button>
+
+        <div class="modal-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            Googleでログイン
-        </button>
-        <div class="register-link">
-            <span>アカウントをお持ちでないですか？</span>
-            <a href="/register">会員登録</a>
         </div>
+
+        <h1 class="modal-title">ログイン</h1>
+        <p class="modal-subtitle">アカウントにログインしてください</p>
+
+        <form class="login-form" th:action="@{/login}" method="post"
+              onsubmit="sessionStorage.setItem('justLoggedIn','1')">
+            <div class="form-group">
+                <label>ID</label>
+                <input type="text" name="username" placeholder="IDを入力">
+            </div>
+
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" name="password" placeholder="········">
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="remember-me">
+                    <span>ログイン状態を保持</span>
+                </label>
+                <a href="#" class="forgot-link">パスワードを忘れた</a>
+            </div>
+
+            <button type="submit" class="login-btn-submit">ログイン</button>
+
+            <div class="divider">
+                <span>または</span>
+            </div>
+
+            <button type="button" class="google-btn" onclick="googleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                </svg>
+                Googleでログイン
+            </button>
+
+            <p class="signup-link">
+                アカウントをお持ちでないですか？ <a href="/register">会員登録</a>
+            </p>
+        </form>
     </div>
 </div>
 
-<!-- 토스트 -->
-<div class="toast-notification" id="registerToast" th:if="${registerSuccess}">
-    <i class="fas fa-check-circle"></i>
-    <span>会員登録が完了しました！ログインしてください。</span>
-</div>
-<div class="toast-notification" id="logoutToast" th:if="${logoutSuccess}">
-    <i class="fas fa-check-circle"></i>
-    <span>ログアウトしました。</span>
+<!-- 修正提案モーダル -->
+<div id="editRequestModal" class="edit-request-modal" style="display: none;">
+    <div class="edit-request-content">
+        <button class="edit-modal-close" onclick="closeEditRequestModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+
+        <div class="edit-modal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        </div>
+        <div class="edit-modal-title">修正提案</div>
+        <div class="edit-modal-subtitle">情報に誤りがある場合はお知らせください</div>
+
+        <input type="hidden" id="editRequestToiletId">
+
+        <!-- 현재 화장실 정보 -->
+        <div class="edit-current-info">
+            <div class="edit-current-label">対象トイレ</div>
+            <div class="edit-current-name" id="editRequestToiletName"></div>
+            <div class="edit-current-address" id="editRequestToiletAddress"></div>
+        </div>
+
+        <!-- 카테고리 선택 -->
+        <div class="edit-form-group">
+            <label class="edit-form-label">カテゴリ <span class="required" style="color:#E53E3E;">*</span></label>
+            <div class="edit-category-group" id="editCategoryGroup">
+                <button type="button" class="edit-cat-btn" data-value="LOCATION" onclick="selectEditCategory(this)">📍 位置情報</button>
+                <button type="button" class="edit-cat-btn" data-value="FACILITY" onclick="selectEditCategory(this)">🔧 施設情報</button>
+                <button type="button" class="edit-cat-btn" data-value="HOURS" onclick="selectEditCategory(this)">🕐 営業時間</button>
+                <button type="button" class="edit-cat-btn" data-value="CLOSED" onclick="selectEditCategory(this)">🚫 閉鎖・移転</button>
+                <button type="button" class="edit-cat-btn" data-value="OTHER" onclick="selectEditCategory(this)">💬 その他</button>
+            </div>
+            <input type="hidden" id="editRequestCategory" value="">
+        </div>
+
+        <!-- 수정 내용 -->
+        <div class="edit-form-group">
+            <label class="edit-form-label">修正内容 <span class="required" style="color:#E53E3E;">*</span></label>
+            <textarea id="editRequestContent" class="edit-textarea" placeholder="修正が必要な内容を具体的に入力してください" maxlength="500"></textarea>
+            <div class="edit-char-count"><span id="editCharCount">0</span>/500</div>
+        </div>
+
+        <button class="edit-submit-btn" onclick="submitEditRequest()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            送信する
+        </button>
+    </div>
 </div>
 
-<script th:src="@{https://oapi.map.naver.com/openapi/v3/maps.js(ncpKeyId=${naverMapsClientId},language='ja')}"></script>
-<script th:src="@{/js/app.js(v=4)}"></script>
-<script th:if="${loginError}">
-    document.addEventListener('DOMContentLoaded', () => openLoginModal());
+<!-- Naver Maps API -->
+<script type="text/javascript" th:src="'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + ${naverMapsClientId} + '&language=ja'"></script>
+<!-- ログイン状態をJSに渡す -->
+<script th:inline="javascript">
+    window.__isLoggedIn = [[${#authorization.expression('isAuthenticated()')}]];
+    // トーストの種類を判定
+    window._toastType = /*[[${logoutSuccess != null ? 'logout' : (registerSuccess != null ? 'register' : (loginError != null ? 'loginError' : ''))}]]*/ '';
 </script>
-<script th:if="${registerSuccess}">
-    document.addEventListener('DOMContentLoaded', () => {
+<!-- App JS -->
+<script th:src="@{/js/app.js(v=17)}"></script>
+<!-- 共通ヘッダーJS -->
+<script th:src="@{/js/header.js(v=1)}"></script>
+<script>
+    // /login 으로 리다이렉트된 경우 자동으로 로그인 모달 열기
+    // ログアウト後（?logout=true）はモーダルを開かない
+    if (window.location.pathname === '/login' && !window.location.search.includes('logout')) {
         openLoginModal();
-        setTimeout(() => {
-            document.getElementById('registerToast')?.classList.add('show');
-            setTimeout(() => document.getElementById('registerToast')?.classList.remove('show'), 3000);
-        }, 300);
-    });
-</script>
+    }
 
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    // 모달 배경 클릭시 닫기
+    document.getElementById('loginModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLoginModal();
+        }
+    });
+
+    // ドロップダウン・トーストはheader.jsで管理
+</script>
 </body>
 </html>
