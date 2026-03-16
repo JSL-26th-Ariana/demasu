@@ -32,7 +32,7 @@ public class ToiletService {
 
     //필터 검색 (24시간, 장애인, 기저귀, 비상벨 등)
     public List<Toilet> findByFilter(double lat, double lng, int radius,
-                                     Integer is24hours, Integer isWeelchair,
+                                     Integer is24hours, Integer isWheelchair,
                                      Integer hasDiaper, Integer hasEmergency,
                                      Integer hasPaper, Integer hasSanitary) {
 
@@ -41,7 +41,7 @@ public class ToiletService {
         params.put("lng", lng);
         params.put("radius", radius);
         params.put("is24hours", is24hours);
-        params.put("isWeelchair", isWeelchair);
+        params.put("isWheelchair", isWheelchair);
         params.put("hasDiaper", hasDiaper);
         params.put("hasEmergency", hasEmergency);
         params.put("hasPaper", hasPaper);
@@ -92,6 +92,26 @@ public class ToiletService {
             toilet.setStatus("PENDING");
             toilet.setByUserId(userId);
             toiletMapper.insertToilet(toilet);
+    }
+
+    //새 화장실 등록 + 태그 한번에 (페이지 폼용)
+    public void insertToiletWithTags(Toilet toilet, Long userId, List<String> tagNames) {
+        toilet.setSource("USER");
+        toilet.setStatus("PENDING");
+        toilet.setByUserId(userId);
+        toiletMapper.insertToilet(toilet); // useGeneratedKeys로 toilet.id 자동 설정됨
+
+        // 태그 등록
+        if (tagNames != null) {
+            for (String tagName : tagNames) {
+                if (tagName != null && !tagName.isBlank()) {
+                    ToiletTag tag = new ToiletTag();
+                    tag.setToiletId(toilet.getId());
+                    tag.setTagName(tagName);
+                    toiletTagMapper.insertTag(tag);
+                }
+            }
+        }
     }
 
     //정보 수정 제안

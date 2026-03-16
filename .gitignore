@@ -15,7 +15,7 @@ build/
 *.ipr
 out/
 
-# --- Eclipse (혹시 모를 팀원용) ---
+# --- Eclipse ---
 .classpath
 .project
 .settings/
@@ -39,7 +39,7 @@ bin/
 *.tar.gz
 *.rar
 
-# --- OS 자동 생성 파일 ---
+# --- OS Generated Files ---
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -49,7 +49,20 @@ Icon?
 hs_err_pid*
 replay_pid*
 
-# --- 기타 ---
+# --- Misc ---
 *.swp
 *.swo
 *~
+
+# --- Environment Config (contains local DB info, never commit) ---
+src/main/resources/application.properties
+
+# --- Upload Files ---
+uploads/
+
+# --- Claude ---
+.claude/
+
+
+# --- Python ---
+import_toilets.py
