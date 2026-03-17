@@ -5,11 +5,205 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>最近見たトイレ - デマス</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/header.css}">
-    <link rel="stylesheet" th:href="@{/css/footer.css}">
-    <link rel="stylesheet" th:href="@{/css/mypage.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@linefukuoka/line-seed-jp@1.0.0/fonts/css/line-seed-jp.css">
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'LINESeedJP_OTF', sans-serif;
+            background: #F5F5F5;
+            min-height: calc(100vh / 0.9);
+            display: flex;
+            flex-direction: column;
+            zoom: 0.9;
+        }
+        .header {
+            background: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #F5F5F5; color: #333; }
+        .header-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1A1A1A;
+        }
+        .container {
+            max-width: 680px;
+            margin: 32px auto;
+            padding: 0 16px 48px;
+            flex: 1;
+            width: 100%;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1A1A1A;
+        }
+        .section-count {
+            background: #00C896;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+        .toilet-list { display: flex; flex-direction: column; gap: 12px; }
+        .toilet-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: box-shadow 0.2s, transform 0.2s;
+            text-decoration: none;
+        }
+        .toilet-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .toilet-info { flex: 1; }
+        .toilet-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1A1A1A;
+            margin-bottom: 6px;
+        }
+        .toilet-address {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .toilet-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .toilet-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .tag {
+            background: #F0F0F0;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #555;
+        }
+        .toilet-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            margin-left: 16px;
+        }
+        .viewed-date {
+            font-size: 11px;
+            color: #bbb;
+            white-space: nowrap;
+        }
+        .detail-link {
+            font-size: 12px;
+            color: #00C896;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        /* 빈 상태 */
+        .empty-state {
+            background: white;
+            border-radius: 16px;
+            padding: 60px 32px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .empty-icon {
+            color: #CCC;
+            margin-bottom: 16px;
+        }
+        .empty-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        .empty-desc {
+            font-size: 13px;
+            color: #BBB;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .go-map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #00C896;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .go-map-btn:hover { background: #00B385; }
+
+        /* 페이지 헤더 */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #00C896;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 24px 24px 0;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .page-header {
+            padding: 28px 24px 32px;
+            text-align: center;
+        }
+        .page-title {
+            font-size: 28px;
+            letter-spacing: 0.05em;
+            font-weight: 800;
+            color: #1A1A1A;
+            margin-bottom: 10px;
+        }
+        .page-subtitle {
+            font-size: 14px;
+            color: #aaa;
+        }
+    </style>
 </head>
 <body class="mypage">
 
