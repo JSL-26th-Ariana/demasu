@@ -11,7 +11,7 @@ var highlightedMarker = null; // 상세보기 중 강조된 마커
 var currentInfoWindow = null; // 현재 열려있는 인포윈도우
 var currentLat = 37.5665;  // 현재 위도 (기본값: 서울)
 var currentLng = 126.9780; // 현재 경도
-var currentFilter = 'all'; // 현재 필터
+var activeFilters = []; // 현재 활성화된 필터 목록 (복수 선택 지원)
 var myLocationMarker = null; // 내 위치 마커
 var SEARCH_RADIUS = 800;     // 검색 반경 (800m 고정)
 var currentPage = 1;         // current page for pagination
@@ -79,10 +79,11 @@ function initMap() {
         currentLat = center.lat();
         currentLng = center.lng();
         var radius = SEARCH_RADIUS;
-        if (currentFilter === 'all') {
+        // 활성 필터가 없으면 전체 로드, 있으면 필터 적용
+        if (activeFilters.length === 0) {
             loadNearbyToilets(currentLat, currentLng, radius);
         } else {
-            loadFilteredToilets(currentLat, currentLng, radius, currentFilter);
+            loadFilteredToilets(currentLat, currentLng, radius, activeFilters);
         }
     });
 }
@@ -241,13 +242,14 @@ function loadNearbyToilets(lat, lng, radius) {
         });
 }
 
-// ========== 필터 검색 ==========
-function loadFilteredToilets(lat, lng, radius, filter) {
+// ========== 필터 검색 (복수 필터 배열 지원) ==========
+function loadFilteredToilets(lat, lng, radius, filters) {
     var url = '/api/toilets/filter?lat=' + lat + '&lng=' + lng + '&radius=' + radius;
-    if (filter === 'is24hours') url += '&is24hours=1';
-    if (filter === 'isWheelchair') url += '&isWheelchair=1';
-    if (filter === 'hasDiaper') url += '&hasDiaper=1';
-    if (filter === 'hasPaper') url += '&hasPaper=1';
+    // filters 배열에 포함된 항목만 파라미터로 추가
+    if (filters.indexOf('is24hours') !== -1)   url += '&is24hours=1';
+    if (filters.indexOf('isWheelchair') !== -1) url += '&isWheelchair=1';
+    if (filters.indexOf('hasDiaper') !== -1)   url += '&hasDiaper=1';
+    if (filters.indexOf('hasPaper') !== -1)    url += '&hasPaper=1';
 
     fetch(url)
         .then(function(response) { return response.json(); })
@@ -978,10 +980,10 @@ function backToList() {
     // 검색바, 필터 다시 보이기
     var searchEl = document.querySelector('.sidebar-search');
     if (searchEl) searchEl.style.display = '';
-    if (currentFilter === 'all') {
+    if (activeFilters.length === 0) {
         loadNearbyToilets(currentLat, currentLng, SEARCH_RADIUS);
     } else {
-        loadFilteredToilets(currentLat, currentLng, SEARCH_RADIUS, currentFilter);
+        loadFilteredToilets(currentLat, currentLng, SEARCH_RADIUS, activeFilters);
     }
 }
 
@@ -1013,22 +1015,44 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ========== 필터 태그 ==========
+// ========== 필터 태그 (복수 선택 지원) ==========
 document.querySelectorAll('.filter-tag').forEach(function(tag) {
     tag.addEventListener('click', function() {
         if (isDetailView) return; // 상세보기 중엔 필터 무시
-        document.querySelectorAll('.filter-tag').forEach(function(t) {
-            t.classList.remove('active');
-        });
-        this.classList.add('active');
 
-        currentFilter = this.dataset.filter;
+        var filter = this.dataset.filter;
         var radius = SEARCH_RADIUS;
 
-        if (currentFilter === 'all') {
+        if (filter === 'all') {
+            // すべて 클릭 시: 모든 필터 해제, すべて만 active
+            activeFilters = [];
+            document.querySelectorAll('.filter-tag').forEach(function(t) {
+                t.classList.remove('active');
+            });
+            document.querySelector('.filter-tag[data-filter="all"]').classList.add('active');
             loadNearbyToilets(currentLat, currentLng, radius);
         } else {
-            loadFilteredToilets(currentLat, currentLng, radius, currentFilter);
+            // 다른 태그 클릭 시: すべて 해제 + 해당 태그 토글
+            document.querySelector('.filter-tag[data-filter="all"]').classList.remove('active');
+
+            var idx = activeFilters.indexOf(filter);
+            if (idx === -1) {
+                // 선택 안 된 태그 → 추가
+                activeFilters.push(filter);
+                this.classList.add('active');
+            } else {
+                // 이미 선택된 태그 → 해제
+                activeFilters.splice(idx, 1);
+                this.classList.remove('active');
+            }
+
+            // 모든 필터 해제되면 すべて로 돌아가기
+            if (activeFilters.length === 0) {
+                document.querySelector('.filter-tag[data-filter="all"]').classList.add('active');
+                loadNearbyToilets(currentLat, currentLng, radius);
+            } else {
+                loadFilteredToilets(currentLat, currentLng, radius, activeFilters);
+            }
         }
     });
 });
