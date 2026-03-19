@@ -4,11 +4,14 @@ import com.jsl26tp.jsl26tp.auth.service.CustomOAuth2UserService;
 import com.jsl26tp.jsl26tp.auth.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +30,30 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * 로그인 실패 핸들러
+     * - DisabledException: 일시정지(SUSPENDED) 회원 → /login?error=suspended
+     *   → CustomUserDetails.isEnabled() == false 일 때 발생
+     * - LockedException: 탈퇴(DELETED) 또는 BANNED 회원 → /login?error=deleted
+     *   → CustomUserDetails.isAccountNonLocked() == false 일 때 발생
+     * - 그 외 (잘못된 ID/PW 등) → /login?error=true
+     */
+    @Bean
+    public AuthenticationFailureHandler loginFailureHandler() {
+        return (request, response, exception) -> {
+            if (exception instanceof DisabledException) {
+                // SUSPENDED 상태 → 일시정지 메시지
+                response.sendRedirect("/login?error=suspended");
+            } else if (exception instanceof LockedException) {
+                // DELETED 또는 BANNED 상태 → 탈퇴/차단 메시지
+                response.sendRedirect("/login?error=deleted");
+            } else {
+                // 일반 로그인 실패 (잘못된 아이디/비밀번호 등)
+                response.sendRedirect("/login?error=true");
+            }
+        };
     }
 
     @Bean
@@ -71,7 +98,9 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
                 .defaultSuccessUrl("/", true)
-                .failureUrl("/login?error=true")
+                // failureUrl 대신 커스텀 핸들러 사용:
+                // SUSPENDED → ?error=suspended, 그 외 → ?error=true
+                .failureHandler(loginFailureHandler())
                 .usernameParameter("username")
                 .passwordParameter("password")
                 .permitAll()

@@ -45,7 +45,9 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !"BANNED".equals(status);
+        // BANNED 또는 DELETED 상태면 잠금 처리 → LockedException 발생
+        // LockedException은 SecurityConfig의 loginFailureHandler에서 /login?error=deleted 로 처리
+        return !"BANNED".equals(status) && !"DELETED".equals(status);
     }
 
     @Override

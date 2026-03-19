@@ -3,6 +3,7 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security6">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理者ダッシュボード - デマス</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@linefukuoka/line-seed-jp@1.0.0/fonts/css/line-seed-jp.css">
@@ -188,6 +189,25 @@
             transition: all 0.15s;
         }
         .btn-delete:hover { background: #E53E3E; color: white; }
+
+        /* ── 관리자 버튼 비활성화 래퍼: hover 시 CSS 툴팁 표시 ── */
+        .admin-disabled-wrap {
+            display: inline-flex; gap: 6px;
+            position: relative;
+        }
+        .admin-disabled-wrap::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%; transform: translateX(-50%);
+            background: #333; color: white;
+            font-size: 12px; padding: 5px 10px;
+            border-radius: 6px; white-space: nowrap;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s;
+            z-index: 10;
+        }
+        .admin-disabled-wrap:hover::after { opacity: 1; }
 
         /* ── Empty / Loading ── */
         .empty-state {
@@ -612,8 +632,15 @@
                 <td>
                     <div class="action-btns">
                         ${
+                            // 관리자 계정: 두 버튼 모두 비활성화 + CSS 툴팁
+                            // disabled 버튼은 pointer-events 없어서 title 안 뜸 → CSS ::after 툴팁 사용
+                            u.role === 'ROLE_ADMIN'
+                                ? `<span class="admin-disabled-wrap" data-tooltip="管理者アカウントは停止・削除できません">
+                                       <button class="btn-suspend" disabled style="opacity:0.35;cursor:not-allowed;pointer-events:none;">停止</button>
+                                       <button class="btn-delete" disabled style="opacity:0.35;cursor:not-allowed;pointer-events:none;">削除</button>
+                                   </span>`
                             // DELETED 상태: 두 버튼 모두 비활성화
-                            u.status === 'DELETED'
+                            : u.status === 'DELETED'
                                 ? `<button class="btn-suspend" disabled style="opacity:0.35;cursor:not-allowed;">停止</button>
                                    <button class="btn-delete" disabled style="opacity:0.35;cursor:not-allowed;">削除</button>`
                             // SUSPENDED 상태: 정지 버튼 대신 해제 버튼 표시
