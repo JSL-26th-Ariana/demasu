@@ -219,10 +219,16 @@ function showToast(msg, type) {
         msg = '会員登録が完了しました！';
     } else if (toastType === 'loginError') {
         sessionStorage.removeItem('justLoggedIn');
-        // URL 파라미터로 SUSPENDED 여부 구분
-        // SecurityConfig의 loginFailureHandler가 DisabledException 시 ?error=suspended 로 리다이렉트
+        // URL 파라미터로 로그인 실패 원인 구분
+        // SecurityConfig loginFailureHandler가 상태별로 다른 파라미터로 리다이렉트:
+        //   DisabledException(SUSPENDED) → ?error=suspended
+        //   LockedException(DELETED)     → ?error=deleted
+        //   그 외                         → ?error=true
         if (window.location.search.includes('error=suspended')) {
             msg = 'アカウントが一時停止されています。管理者にお問い合わせください。';
+        } else if (window.location.search.includes('error=deleted')) {
+            // DELETED 상태 → 탈퇴된 계정 메시지
+            msg = 'このアカウントは退会済みです。';
         } else {
             msg = 'IDまたはパスワードが正しくありません';
         }

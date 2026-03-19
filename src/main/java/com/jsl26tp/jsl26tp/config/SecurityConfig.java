@@ -5,6 +5,7 @@ import com.jsl26tp.jsl26tp.auth.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,17 +34,21 @@ public class SecurityConfig {
 
     /**
      * 로그인 실패 핸들러
-     * - DisabledException: 일시정지(SUSPENDED) 회원 → /login?error=suspended 로 리다이렉트
-     *   → header.js에서 URL 파라미터를 읽어 "アカウントが一時停止されています" 메시지 표시
-     * - 그 외 (잘못된 ID/PW 등) → /login?error=true 로 리다이렉트
-     *   → header.js에서 "IDまたはパスワードが正しくありません" 메시지 표시
+     * - DisabledException: 일시정지(SUSPENDED) 회원 → /login?error=suspended
+     *   → CustomUserDetails.isEnabled() == false 일 때 발생
+     * - LockedException: 탈퇴(DELETED) 또는 BANNED 회원 → /login?error=deleted
+     *   → CustomUserDetails.isAccountNonLocked() == false 일 때 발생
+     * - 그 외 (잘못된 ID/PW 등) → /login?error=true
      */
     @Bean
     public AuthenticationFailureHandler loginFailureHandler() {
         return (request, response, exception) -> {
             if (exception instanceof DisabledException) {
-                // CustomUserDetails.isEnabled() == false → SUSPENDED 상태
+                // SUSPENDED 상태 → 일시정지 메시지
                 response.sendRedirect("/login?error=suspended");
+            } else if (exception instanceof LockedException) {
+                // DELETED 또는 BANNED 상태 → 탈퇴/차단 메시지
+                response.sendRedirect("/login?error=deleted");
             } else {
                 // 일반 로그인 실패 (잘못된 아이디/비밀번호 등)
                 response.sendRedirect("/login?error=true");
