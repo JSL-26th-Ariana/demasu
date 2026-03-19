@@ -105,7 +105,13 @@ public class AdminService {
      */
     @Transactional
     public void deleteUser(Long id) {
-        getUserById(id); // 존재 확인
+        AdminUser user = getUserById(id); // 존재 확인
+
+        // 관리자 계정은 삭제 불가 (suspendUser와 동일한 보호 로직)
+        if ("ROLE_ADMIN".equals(user.getRole())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         adminMapper.updateUserStatus(id, "DELETED", null);
     }
 
