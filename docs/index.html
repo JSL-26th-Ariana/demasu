@@ -701,7 +701,7 @@
       <table class="req-table">
         <thead><tr><th>ID</th><th>機能要求</th><th>詳細</th><th>状態</th></tr></thead>
         <tbody>
-          <tr><td class="req-id">FR-SCR003-1</td><td>トイレ詳細表示</td><td>トイレ名・住所・設備タグ・평균評価・レビュー件数を表示する</td><td><span class="st-done">✅ 完了</span></td></tr>
+          <tr><td class="req-id">FR-SCR003-1</td><td>トイレ詳細表示</td><td>トイレ名・住所・設備タグ・平均評価・レビュー件数を表示する</td><td><span class="st-done">✅ 完了</span></td></tr>
           <tr><td class="req-id">FR-SCR003-2</td><td>設備タグ表示</td><td>車椅子・おむつ交換・24時間・多目的・清潔などのタグをアイコン付きで表示する</td><td><span class="st-done">✅ 完了</span></td></tr>
           <tr><td class="req-id">FR-SCR003-3</td><td>レビュータブ</td><td>詳細ページ内のタブでレビュー一覧を表示。最新順・高評価順の切り替えが可能</td><td><span class="st-done">✅ 完了</span></td></tr>
           <tr><td class="req-id">FR-SCR003-4</td><td>地図表示</td><td>トイレの位置をNaver Maps小地図で表示する</td><td><span class="st-done">✅ 完了</span></td></tr>
@@ -915,7 +915,7 @@
             <tr><td>clean_score</td><td class="type">VARCHAR(10)</td><td>清潔度スコア</td></tr>
             <tr><td>content</td><td class="type">TEXT</td><td>レビュー本文</td></tr>
             <tr><td>tags</td><td class="type">VARCHAR(255)</td><td>タグ情報</td></tr>
-            <tr><td>status</td><td class="type">VARCHAR(20)</td><td>ACTIVE / HIDDEN / DELETED</td></tr>
+            <tr><td>status</td><td class="type">VARCHAR(20)</td><td>ACTIVE / HIDDEN</td></tr>
             <tr><td>created_at</td><td class="type">DATETIME</td><td>投稿日時</td></tr>
             <tr><td>updated_at</td><td class="type">DATETIME</td><td>更新日時</td></tr>
             <tr><td>deleted_at</td><td class="type">DATETIME</td><td>削除日時</td></tr>
@@ -1077,6 +1077,7 @@
           <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/toilets/search</td><td>トイレキーワード検索</td><td class="url-auth">全員</td></tr>
           <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/toilets/filter</td><td>タグフィルタ検索</td><td class="url-auth">全員</td></tr>
           <tr><td><span class="method m-get">GET</span></td><td class="url-path">/toilet/add</td><td>新規トイレ提案ページ</td><td class="url-auth">ROLE_USER</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td class="url-path">/toilet/add</td><td>新規トイレ提案フォーム送信</td><td class="url-auth">ROLE_USER</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/toilets</td><td>新規トイレ提案送信</td><td class="url-auth">ROLE_USER</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/toilets/{id}/edit-request</td><td>修正提案送信</td><td class="url-auth">ROLE_USER</td></tr>
         </tbody>
@@ -1156,21 +1157,21 @@
           <tr><td colspan="4" style="padding:6px 12px;font-size:11px;color:var(--gray);background:var(--light);">── API エンドポイント ──</td></tr>
           <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/me</td><td>現在の管理者情報取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/users</td><td>会員一覧取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
-          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/users/{id}</td><td>会員詳細 취득</td><td class="url-auth">ROLE_ADMIN</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/users/{id}</td><td>会員詳細取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/users/{id}/suspend</td><td>会員停止</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/users/{id}/unsuspend</td><td>会員停止解除</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/users/{id}/delete</td><td>会員削除</td><td class="url-auth">ROLE_ADMIN</td></tr>
-          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/reports</td><td>報告一覧 취득</td><td class="url-auth">ROLE_ADMIN</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/reports</td><td>報告一覧取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/reports/{id}/resolve</td><td>報告承認</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/reports/{id}/dismiss</td><td>報告却下</td><td class="url-auth">ROLE_ADMIN</td></tr>
-          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/toilets</td><td>トイレ承認一覧 취득</td><td class="url-auth">ROLE_ADMIN</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/toilets</td><td>トイレ承認一覧取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/toilets/{id}/approve</td><td>トイレ承認</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/toilets/{id}/reject</td><td>トイレ却下</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-put">PUT</span></td><td class="url-path">/api/admin/toilets/{id}</td><td>トイレ情報修正</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-delete">DELETE</span></td><td class="url-path">/api/admin/toilets/{id}</td><td>トイレ削除</td><td class="url-auth">ROLE_ADMIN</td></tr>
-          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/inquiries</td><td>問い合わせ一覧 취득</td><td class="url-auth">ROLE_ADMIN</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/inquiries</td><td>問い合わせ一覧取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/inquiries/{id}/answer</td><td>問い合わせ回答</td><td class="url-auth">ROLE_ADMIN</td></tr>
-          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/edit-requests</td><td>修正提案一覧 취득</td><td class="url-auth">ROLE_ADMIN</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="url-path">/api/admin/edit-requests</td><td>修正提案一覧取得</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/edit-requests/{id}/approve</td><td>修正提案承認</td><td class="url-auth">ROLE_ADMIN</td></tr>
           <tr><td><span class="method m-post">POST</span></td><td class="url-path">/api/admin/edit-requests/{id}/reject</td><td>修正提案却下</td><td class="url-auth">ROLE_ADMIN</td></tr>
         </tbody>
@@ -1415,7 +1416,7 @@
           <ul class="ss-detail-features" style="flex:1; margin-bottom:0;">
             <li>名前・住所・設備タグ・説明入力</li>
             <li>地図クリック lat / lng 自動入力</li>
-            <li>source='USER', status='WAITING' でINSERT</li>
+            <li>source='USER', status='PENDING' でINSERT</li>
             <li>マイページから提案ステータス確認</li>
           </ul>
         </div>
